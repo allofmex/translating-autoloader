@@ -1,0 +1,8 @@
+Zu übersetzen : Translated
+Klick {n}FIRST LINK{/n} oder {n}ANOTHER LINK{/n}... : |
+    {n}{/n} or {n}{/n} is clickable.
+Text mit Tags : |
+    This is text with tags, in this case even a list
+    <ul>
+        <li>number 1</li>
+    </ul>

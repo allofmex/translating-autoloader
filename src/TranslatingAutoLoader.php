@@ -4,16 +4,29 @@ namespace Allofmex\TranslatingAutoLoader;
 
 use function Composer\Autoload\includeFile;
 
+/**
+ * Wrapper for composer autoload. Translates class files, saves result to cache dir
+ * and auto-loads cached version if needed.
+ *
+ */
 class TranslatingAutoLoader {
 
+    /**
+     * 
+     * @var TranslatingAutoLoader
+     */
     static $instance = null;
     static $loader = null;
-    static $toTranslate = null; 
+    private $isToTranslateCb = null;
 
     public function init() {
         self::$instance = $this;
-        $composerLoader = require $_SERVER['DOCUMENT_ROOT'].'/../vendor/autoload.php';
-        if (empty($composerLoader)) {
+        if (file_exists(__DIR__.'/../../../autoload.php')) {
+            $composerLoader = require __DIR__.'/../../../autoload.php';
+        } else if (file_exists(__DIR__.'/../vendor/autoload.php')) {
+            // testing environment only
+            $composerLoader = require __DIR__.'/../vendor/autoload.php';
+        } else {
             throw new \Exception('Composer autoloader not found!');
         }
         self::$loader = $composerLoader;
@@ -24,13 +37,14 @@ class TranslatingAutoLoader {
         $locale = defined('LANG') ? LANG : 'en';
         $classFile = self::$loader->findFile($class);
         if (!empty($classFile)) {
-            if (self::$toTranslate == null) {
-                self::loadConfig();
+            if (self::$instance->isToTranslateCb == null) {
+                self::$instance->loadConfig();
             }
-            if ('PreProcessTranslator\Translate' === $class) {
+            $whitelistCb = self::$instance->isToTranslateCb;
+            if ('Allofmex\TranslatingAutoLoader\Translate' === $class) {
                 include $classFile;
-            } else if (in_array($class, self::$toTranslate)) {
-                echo '<b>translating '.$class.'</b><br>';
+            } else if ($whitelistCb($class, $classFile)) {
+//                 echo '<b>translating '.$class.'</b><br>';
                 include Translate::translateFile($classFile, $locale);
             } else {
                 include $classFile;
@@ -38,17 +52,26 @@ class TranslatingAutoLoader {
         }
     }
 
-    private static function loadConfig() {
-        $basePath = $_SERVER['DOCUMENT_ROOT'];
-        $file = $basePath.'/../config/translating_auto_loader.config.php';
+    private function loadConfig() {
+        $file = $_SERVER['DOCUMENT_ROOT'].'/../config/translating_autoloader.config.php';
         if (file_exists($file)) {
             $config = require($file);
-            self::$toTranslate = isset($config['classToTranslate']) ? $config['classToTranslate'] : array();
-        } else {
-            self::$toTranslate = array();
+            if (isset($config['classToTranslate'])) {
+                $this->isToTranslateCb = function($class, $classFile) use ($config){
+                    // return true if class is white-listed
+                    return in_array($class, $config['classToTranslate']);
+                };
+            }
+        }
+        if ($this->isToTranslateCb == null) {
+            // no white-list in config
+            $this->isToTranslateCb = function($class, $classFile) {
+                // translate all own files, but no vendor packages
+                return preg_match('/^((?!\/vendor\/).)*$/m', realpath($classFile)) === 1;
+            };
         }
     }
-    
+
     public function selfTranslate($file, $locale = null) {
         if ($locale == null) {
             $locale = defined('LANG') ? LANG : 'en';
@@ -62,12 +85,30 @@ class TranslatingAutoLoader {
         if ($parts === false || count($parts) < 2) {
             throw new \Exception('No line with call to function '.FUN_NAME.' found in '.$file);
         }
+        // extract 'use ' statements existing before call to this function to re-append later 
         preg_match_all('/^use.*$/m', $parts[0], $existingUse);
         $existingUseStatements = implode(PHP_EOL, $existingUse[0]);
 
         // keep original context
         extract($GLOBALS);
+        // run rest of calling file from prepared string and exit
         eval($existingUseStatements.PHP_EOL.$parts[1]);
         exit(0);
+    }
+
+    public static function unregister() {
+        if (self::$instance !== null) {
+            spl_autoload_unregister(array(self::$instance, 'loadClass'),);
+            self::$instance = null;
+        }
+    }
+
+    /**
+     * For testing, invalidate loaded config.
+     */
+    public static function reset() {
+        if (self::$instance !== null) {
+            self::$instance->isToTranslateCb = null;
+        }
     }
 }

@@ -2,26 +2,35 @@
 
 namespace Allofmex\TranslatingAutoLoader;
 
+use Symfony\Component\Yaml\Yaml;
+
+/**
+ * Translates files and stores language specific versions to cache dir.
+ *
+ */
 class Translate {
 
     static $strings = null;
     const MAX_KEY_LENGTH = 40;
 
-    const CACHE_DIR = ROOT_PATH.'../var/cache';
+    static $cacheDir = null;
 
     public static function translateFile($fileToTranslate, $locale) {
-        if (!file_exists(self::CACHE_DIR)) {
-            mkdir(self::CACHE_DIR);
+        if (self::$cacheDir === null) {
+            self::$cacheDir = $_SERVER['DOCUMENT_ROOT'].'/../var/cache';
         }
-        $cacheFile = self::CACHE_DIR.'/'.$locale.'_'.basename($fileToTranslate);
+        if (!file_exists(self::$cacheDir)) {
+            mkdir(self::$cacheDir, 700, true);
+        }
+        $cacheFile = self::$cacheDir.'/'.$locale.'_'.basename($fileToTranslate);
         $langFile = self::getLangFile($locale);
-        $langFilePhp = self::CACHE_DIR.'/lang-file_'.$locale.'.php';
+        $langFilePhp = self::$cacheDir.'/lang-file_'.$locale.'.php';
         $mTimeFile = filemtime($fileToTranslate);
         $forceUpdate = false;
 
         // check if language file was updated
         if (!file_exists($langFilePhp) || filemtime($langFile) > $mTimeFile) {
-            self::parseIniFile($langFile, $langFilePhp);
+            self::parseLangFile($langFile, $langFilePhp);
             $forceUpdate = true;
         }
 
@@ -49,17 +58,14 @@ class Translate {
                 $key = substr($key, 0, self::MAX_KEY_LENGTH);
             }
             // search for not-to-translate section {n}keep{/n}
-            $keyEnd = strpos($match[1], '{n}');
+            $hasRestoreSection = strpos($match[1], '{n}') !== false;
             // key to match entry in translation files is first part until {n} (if existing)
             // and max length is MAX_KEY_LENGTH
 
-            if ($keyEnd !== false && $keyEnd < self::MAX_KEY_LENGTH) {
-                $key = substr($match[1], 0, $keyEnd);
-            }
             $key = trim($key);
             $translatedText = isset($strings[$key]) ? $strings[$key] : $match[1];
 
-            if ($keyEnd !== false) {
+            if ($hasRestoreSection) {
                 // restore not-to-translate section from original texts section
                 return self::restore($match[1], $translatedText);
             } else {
@@ -85,23 +91,27 @@ class Translate {
     }
     
     private static function getLangFile($locale) {
-//         return ROOT_PATH.'../translations/'.$locale.'.ini';
-        return ROOT_PATH.'../translations/'.$locale.'.yml';
+        // return _SERVER['DOCUMENT_ROOT'].'/../translations/'.$locale.'.ini';
+        return $_SERVER['DOCUMENT_ROOT'].'/../translations/'.$locale.'.yml';
     }
 
-    private static function parseIniFile($langFile, $langFilePhp) {
-//         echo 'convert file '.$langFile;
+    private static function parseLangFile($langFile, $langFilePhp) {
         if (file_exists($langFile)) {
-            $rawData = yaml_parse_file($langFile);
-//             $rawData = parse_ini_file($langFile, false, INI_SCANNER_RAW);
+            $rawData = Yaml::parseFile($langFile);
+            // $rawData = yaml_parse_file($langFile);
+            // $rawData = parse_ini_file($langFile, false, INI_SCANNER_RAW);
             if ($rawData != null) {
                 $keys = array_keys($rawData);
+                $values = array_values($rawData);
                 foreach ($keys as $keyIndex => $key) {
                     if (strlen($key) > self::MAX_KEY_LENGTH) {
                         $keys[$keyIndex] = trim(substr($key, 0, self::MAX_KEY_LENGTH));
                     }
                 }
-                $rawData = array_combine($keys, $rawData);
+                foreach ($values as $valueIndex => $value) {
+                    $values[$valueIndex] = trim($value);
+                }
+                $rawData = array_combine($keys, $values);
             } else {
                 $rawData = array();
             }

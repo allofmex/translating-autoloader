@@ -11,17 +11,20 @@ class TranslateTest extends TestCase {
         );
         assertEquals('Translated result', Translate::translate('{t}Text to translate{/t}', $strings));
     }
-    
+
     public function testString_middle_working() {
         $strings = array (
                 'Text to translate' => 'Translated result',
         );
         assertEquals('BEFORE Translated result AFTER', Translate::translate('BEFORE {t}Text to translate{/t} AFTER', $strings));
     }
-    
+
+    /**
+     * Must translate text but keep original text between {n}
+     */
     public function testString_withIgnoreSection_working() {
         $strings = array (
-                'Text' => 'Translated {n}placeholder{/n} result',
+                'Text {n}with link{/n} to translate' => 'Translated {n}placeholder{/n} result',
         );
         assertEquals('Translated with link result', Translate::translate('{t}Text {n}with link{/n} to translate{/t}', $strings));
     }
