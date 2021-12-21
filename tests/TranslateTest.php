@@ -24,9 +24,9 @@ class TranslateTest extends TestCase {
      */
     public function testString_withIgnoreSection_working() {
         $strings = array (
-                'Text {n}with link{/n} to translate' => 'Translated {n}placeholder{/n} result',
+                'Text that has' => 'Translated {n}placeholder{/n} result',
         );
-        assertEquals('Translated with link result', Translate::translate('{t}Text {n}with link{/n} to translate{/t}', $strings));
+        assertEquals('Translated with link result', Translate::translate('{t}Text that has {n}with link{/n} (this part does not matter) within{/t}', $strings));
     }
 }
 ?>

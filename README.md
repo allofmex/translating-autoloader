@@ -110,12 +110,24 @@ and code will be parsed by php only AFTER translation is done.
 
 Just make sure to encode special character like colon, semicolon,... with there html entity like `&lt`;
 
+If your key may become too short (e.g. if your real text may have a {n} section early in string), just use a longer string in code and handle correct format in translation.
+Example:
+- Instead of `echo {t}This {n}link{/n} needs translation{/t}.` (key would be only 'This') 
+- use `echo {t}link to translate {n}link{/n}{/t}.` and in translation file the real order: `link to translate: This {n}link{/n} needs translation `
+
+
 ## Testing
 
-Run
+Run test as
 
 ```
 vendor/bin/phpunit --bootstrap tests/bootstrap.php tests/
+```
+
+Or straight with docker
+
+```
+docker run -it -v /local_source_dir/translating-autoloader:/src --workdir=/src php:8-alpine vendor/bin/phpunit --bootstrap tests/bootstrap.php tests/
 ```
 
 ## Contribution

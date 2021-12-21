@@ -58,11 +58,11 @@ class Translate {
                 $key = substr($key, 0, self::MAX_KEY_LENGTH);
             }
             // search for not-to-translate section {n}keep{/n}
-            $hasRestoreSection = strpos($match[1], '{n}') !== false;
+            $ignoreStart = strpos($match[1], '{n}');
+            $hasRestoreSection = $ignoreStart !== false;
             // key to match entry in translation files is first part until {n} (if existing)
             // and max length is MAX_KEY_LENGTH
-
-            $key = trim($key);
+            $key = trim($hasRestoreSection ? substr($key, 0, $ignoreStart) : $key);
             $translatedText = isset($strings[$key]) ? $strings[$key] : $match[1];
 
             if ($hasRestoreSection) {
