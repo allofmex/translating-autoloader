@@ -11,7 +11,7 @@ use Allofmex\TranslatingAutoLoader\Test\ToBeTranslatedClass2;
 use Allofmex\TranslatingAutoLoader\Test\NotToBeTranslatedClass2;
 
 class TranslatingAutoLoaderTest extends TestCase {
-    const CONFIG_FILE_PATH = __DIR__.'/../config/translating_autoloader.config.php';
+    const CONFIG_FILE_PATH = __DIR__.'/../translations/translating_autoloader.config.php';
     const LANGUAGE_FILE_PATH = __DIR__.'/../translations/en.yml';
 
     public static function setUpBeforeClass() : void {
@@ -19,21 +19,16 @@ class TranslatingAutoLoaderTest extends TestCase {
     }
 
     protected function setUp() : void {
-        if (!file_exists(dirname(self::CONFIG_FILE_PATH))) {
-            mkdir(dirname(self::CONFIG_FILE_PATH), 0700, true);
-        }
-        assertNotFalse(file_put_contents(self::CONFIG_FILE_PATH, file_get_contents(__DIR__.'/assets/translating_autoloader.config.php'), LOCK_EX));
-
         if (!file_exists(dirname(self::LANGUAGE_FILE_PATH))) {
             mkdir(dirname(self::LANGUAGE_FILE_PATH), 0700, true);
         }
+        assertNotFalse(file_put_contents(self::CONFIG_FILE_PATH, file_get_contents(__DIR__.'/assets/translating_autoloader.config.php'), LOCK_EX));
         assertNotFalse(file_put_contents(self::LANGUAGE_FILE_PATH, file_get_contents(__DIR__.'/assets/en.yml'), LOCK_EX));
         TranslatingAutoLoader::reset();
     }
 
     protected function tearDown(): void {
         if (file_exists(self::CONFIG_FILE_PATH)) unlink(self::CONFIG_FILE_PATH);
-        if (file_exists(dirname(self::CONFIG_FILE_PATH))) rmdir(dirname(self::CONFIG_FILE_PATH));
         if (file_exists(self::LANGUAGE_FILE_PATH)) unlink(self::LANGUAGE_FILE_PATH);
         if (file_exists(dirname(self::LANGUAGE_FILE_PATH))) rmdir(dirname(self::LANGUAGE_FILE_PATH));
         foreach (glob(__DIR__.'/../var/cache/*') as $file) {

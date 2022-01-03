@@ -1,6 +1,6 @@
 <?php
 return array(
         'classToTranslate' => array(
-                'Allofmex\TranslatingAutoLoader\Test\ToBeTranslatedClass'
+                Allofmex\TranslatingAutoLoader\Test\ToBeTranslatedClass::class
         )
 );

@@ -53,7 +53,7 @@ class TranslatingAutoLoader {
     }
 
     private function loadConfig() {
-        $file = $_SERVER['DOCUMENT_ROOT'].'/../config/translating_autoloader.config.php';
+        $file = $_SERVER['DOCUMENT_ROOT'].'/../translations/translating_autoloader.config.php';
         if (file_exists($file)) {
             $config = require($file);
             if (isset($config['classToTranslate'])) {
