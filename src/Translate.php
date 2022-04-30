@@ -46,6 +46,22 @@ class Translate {
     }
 
     /**
+     * Warning! This is only partially cached and should not be used for production.
+     * You may call this in testing.
+     * 
+     * @param string $text plain string to translate (without {t})
+     * @param string $locale
+     * @return string
+     */
+    public static function translateString(string $text, string $locale) : string {
+        if (self::$strings === null) {
+            $langFilePhp = self::$cacheDir.'/lang-file_'.$locale.'.php';
+            self::$strings = include $langFilePhp;
+        }
+        return self::findTranslateAndRestore($text, self::$strings);
+    }
+
+    /**
      * 
      * @param string $rawText original/untranslated text
      * @param string $langFilePhp
@@ -53,27 +69,32 @@ class Translate {
      */
     static function translate($rawText, $strings) {
         $replaceCb = function($match) use (&$strings) {
-            $key = $match[1];
+            $orgText = $match[1];
+            return self::findTranslateAndRestore($orgText, $strings);
+        };
+        // replace all {t}translate.me{/t} in replaceCb()
+        return preg_replace_callback('/{t}([\s\S]+?){\/t}/', $replaceCb, $rawText);
+    }
+
+    private static function findTranslateAndRestore(string $orgText, $strings) {
+        $key = $orgText;
             if (strlen($key) > self::MAX_KEY_LENGTH) {
                 $key = substr($key, 0, self::MAX_KEY_LENGTH);
             }
             // search for not-to-translate section {n}keep{/n}
-            $ignoreStart = strpos($match[1], '{n}');
+            $ignoreStart = strpos($orgText, '{n}');
             $hasRestoreSection = $ignoreStart !== false;
             // key to match entry in translation files is first part until {n} (if existing)
             // and max length is MAX_KEY_LENGTH
             $key = trim($hasRestoreSection ? substr($key, 0, $ignoreStart) : $key);
-            $translatedText = isset($strings[$key]) ? $strings[$key] : $match[1];
+            $translatedText = isset($strings[$key]) ? $strings[$key] : $orgText;
 
             if ($hasRestoreSection) {
                 // restore not-to-translate section from original texts section
-                return self::restore($match[1], $translatedText);
+                return self::restore($orgText, $translatedText);
             } else {
                 return $translatedText;
             }
-        };
-        // replace all {t}translate.me{/t} in replaceCb()
-        return preg_replace_callback('/{t}([\s\S]+?){\/t}/', $replaceCb, $rawText);
     }
 
     private static function restore($originalText, $translatedText) {
