@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Translate {
 
-    static $strings = null;
+    static $strings = array();
     const MAX_KEY_LENGTH = 40;
 
     static $cacheDir = null;
@@ -37,10 +37,10 @@ class Translate {
         // check if cached translation file needs to be updated
         if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile) || $forceUpdate) {
             // convert .ini file to .php file
-            if (self::$strings === null) {
-                self::$strings = include $langFilePhp;
+            if (!key_exists($locale, self::$strings)) {
+                self::$strings[$locale] = include $langFilePhp;
             }
-            file_put_contents($cacheFile, self::translate(file_get_contents($fileToTranslate), self::$strings), LOCK_EX);
+            file_put_contents($cacheFile, self::translate(file_get_contents($fileToTranslate), self::$strings[$locale]), LOCK_EX);
         }
         return $cacheFile;
     }

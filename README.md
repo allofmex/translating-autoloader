@@ -154,10 +154,10 @@ Run test as
 vendor/bin/phpunit --bootstrap tests/bootstrap.php tests/
 ```
 
-Or straight with docker
+Or straight with docker (call from TranslatingAutoloader root dir, where directories `tests` and `src` are)
 
 ```
-docker run -it -v /local_source_dir/translating-autoloader:/src --workdir=/src php:8-alpine vendor/bin/phpunit --bootstrap tests/bootstrap.php tests/
+docker run -it -v $PWD:/src --workdir=/src php:8-alpine vendor/bin/phpunit --bootstrap tests/bootstrap.php tests/
 ```
 
 ## Contribution
