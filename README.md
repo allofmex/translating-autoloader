@@ -12,11 +12,11 @@ This implementation extends the original concept by the following:
 
 - **Skip tags** `{n}` added
 
-  Parts within the to-be-translated strings can be kept from original text. Use-full for example if you have `<a href="...">link</a>` in your texts. Wrap it in `{n}<a href...{/t}` and you don't need to split your strings in multiple parts.
+  Parts within the to-be-translated strings can be kept from original text. Use-full for example if you have `<a href="...">link</a>` in your texts. Wrap it in `{t}...{n}<a href...>{/n}...{/t}` and you don't need to split your strings in multiple parts.
 
 - Translation files as **yaml**
 
-  This allows to use multi-line values in translation files, which improves readability especially if html code is to be translated.
+  This allows to use multi-line values in translation files, which improves readability especially if html code is inlcuded in target translation text.
 
 
 ## How-to-use
@@ -75,45 +75,75 @@ Text mit Tags : |
         <li>number 1</li>
     </ul>
 Klick {first link} oder {another link}. : |
-    {n}{/n} or {n}{/t} is clickable.
+    {n}{/n} or {n}{/n} is clickable.
 ```
 
 
 ##### Auto-loading
+Change your auto-loading calls:
 
-For entrypoint pages use
+```
+// require ROOT_PATH.'../vendor/autoload.php';` <-- replace
+require ROOT_PATH.'../vendor/allofmex/translating-autoloader/src/autoload.php';
+define('LANG', 'en');
+...
+$myClass = new MyClass();
+echo $myClass->getText(); // will output 'Translated'
+```
+
+For entrypoint/non-class files:
 > www-root/my-page.php
 
 ```
+
 // require ROOT_PATH.'../vendor/autoload.php';` <-- replace
 require ROOT_PATH.'../vendor/allofmex/translating-autoloader/src/autoload.php';
 
 use Allofmex\TranslatingAutoLoader\Translate;
 
-define('USER_LOCALE', 'en');
+define('LANG', 'en');
 
-require Translate::translateFile(ROOT_PATH.'../templates/my-page.php', USER_LOCALE);
+require Translate::translateFile(ROOT_PATH.'../templates/navigation.php', LANG);
+require Translate::translateFile(ROOT_PATH.'../templates/my-page.php', LANG);
 ```
 
-### Prepare your to-be-translated classes
-
-Wrap all texts that need to be translated in `{t} {/t}`. You may also insert (multiple) `{n} {/n}`
-sections within those strings to keep original test.
+### Additional details
+##### Tags
+Wrap all texts that need to be translated in `{t} {/t}`. You may also insert (multiple) `{n} {/n}` sections within those strings to keep original test.
 
 ```
 $string = "not translated, {t}will be <b>translated</b>{n} except <i>part within 'n'{/n}, translation 
 will continue here.</i>{/t} This will not be translated.
 ```
 
-You don't need to mind html tag positions or even php code. All will be replaced via raw text search/replace
-and code will be parsed by php only AFTER translation is done.
+You don't need to mind html tag positions or even php code. All within {t} will be replaced via raw text search/replace and code will be parsed by php only AFTER translation is done.
 
-Just make sure to encode special character like colon, semicolon,... with there html entity like `&lt`;
+Just make sure to encode special character like colon, semicolon,... in your `translations/xx.yml` files with there html entity like `&lt;` or use multiline ( | ) yml style.
 
 If your key may become too short (e.g. if your real text may have a {n} section early in string), just use a longer string in code and handle correct format in translation.
 Example:
 - Instead of `echo {t}This {n}link{/n} needs translation{/t}.` (key would be only 'This') 
 - use `echo {t}link to translate {n}link{/n}{/t}.` and in translation file the real order: `link to translate: This {n}link{/n} needs translation `
+
+
+##### Define only specific classes to be translated
+
+By default, all auto-loaded classes will be translated. If most of your classes do not have text-to-translate, you may whitelist only specific classes to franslation by creating the following file
+
+> translations/translating_autoloader.config.php
+
+```
+<?php
+return array(
+        'classToTranslate' => array(
+                Your\NameSpace\ToBeTranslatedClass::class,
+                ...
+        )
+);
+```
+
+##### Cache
+Files will be translated only once on very first access (file-changed time, not per client-session). Translated result is saved to `var/cache/` (`en_filename.php`) and loaded from there on following auto-load calls. In case of problems, you may delete the cached files, they will be recreated on next access.
 
 
 ## Testing
