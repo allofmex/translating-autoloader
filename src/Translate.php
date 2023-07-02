@@ -36,13 +36,17 @@ class Translate {
 
         // check if cached translation file needs to be updated
         if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile) || $forceUpdate) {
-            // convert .ini file to .php file
-            if (!key_exists($locale, self::$strings)) {
-                self::$strings[$locale] = include $langFilePhp;
-            }
-            file_put_contents($cacheFile, self::translate(file_get_contents($fileToTranslate), self::$strings[$locale]), LOCK_EX);
+            file_put_contents($cacheFile, self::translate(file_get_contents($fileToTranslate), self::getStringsForLocale($locale)), LOCK_EX);
         }
         return $cacheFile;
+    }
+
+    private static function getStringsForLocale($locale) : array {
+        $langFilePhp = self::$cacheDir.'/lang-file_'.$locale.'.php';
+        if (!key_exists($locale, self::$strings)) {
+            self::$strings[$locale] = include $langFilePhp;
+        }
+        return self::$strings[$locale];
     }
 
     /**
@@ -54,11 +58,7 @@ class Translate {
      * @return string
      */
     public static function translateString(string $text, string $locale) : string {
-        if (self::$strings === null) {
-            $langFilePhp = self::$cacheDir.'/lang-file_'.$locale.'.php';
-            self::$strings = include $langFilePhp;
-        }
-        return self::findTranslateAndRestore($text, self::$strings);
+        return self::findTranslateAndRestore($text, self::getStringsForLocale($locale));
     }
 
     /**
