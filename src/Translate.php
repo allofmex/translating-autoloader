@@ -20,7 +20,7 @@ class Translate {
             self::$cacheDir = $_SERVER['DOCUMENT_ROOT'].'/../var/cache';
         }
         if (!file_exists(self::$cacheDir)) {
-            mkdir(self::$cacheDir, 700, true);
+            mkdir(self::$cacheDir, 0700, true);
         }
         $cacheFile = self::$cacheDir.'/'.$locale.'_'.basename($fileToTranslate);
         $langFile = self::getLangFile($locale);
