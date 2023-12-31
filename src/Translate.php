@@ -141,7 +141,9 @@ class Translate {
         if (self::$cacheDir === null) {
             self::$cacheDir = self::getProjectRootDir().'/var/cache';
             if (!file_exists(self::$cacheDir)) {
-                mkdir(self::$cacheDir, 0700, true);
+                if (!mkdir(self::$cacheDir, 0700, true)) {
+                    throw new \Exception('Could not create dir '.self::$cacheDir.', please make sure the file permission are correct');
+                }
             }
         }
         return self::$cacheDir;
@@ -149,7 +151,7 @@ class Translate {
 
     private static function getProjectRootDir() {
         if (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] !== '') {
-            $docRoot = $_SERVER['DOCUMENT_ROOT'].'/..';
+            $docRoot = realpath($_SERVER['DOCUMENT_ROOT'].'/..');
         } else {
             // fallback for testing,...
             $docRoot = getcwd();
