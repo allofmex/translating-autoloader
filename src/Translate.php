@@ -46,6 +46,8 @@ class Translate {
     }
 
     /**
+     * To translate a single phrase (that would be within a single {t}{/t} block.
+     *
      * Warning! This is only partially cached and should not be used for production.
      * You may call this in testing.
      *
@@ -55,6 +57,17 @@ class Translate {
      */
     public static function translateString(string $text, string $locale) : string {
         return self::findTranslateAndRestore($text, self::getStringsForLocale($locale));
+    }
+
+    /**
+     * Only use this, if you need to translate dynamically generated text. For static content
+     * prefere translateFile()
+     * @param string $text text to translate (may contain multiple translateable sections)
+     * @param string $locale
+     * @return string translated text
+     */
+    public static function translateText(string $text, string $locale) : string {
+        return self::translate($text, self::getStringsForLocale($locale));
     }
 
     /**
