@@ -15,6 +15,8 @@ class Translate {
 
     static $cacheDir = null;
 
+    private static $tokenSet = null;
+
     public static function translateFile($fileToTranslate, $locale) {
         $cacheDir = self::getCacheDir();
         $cacheFile = $cacheDir.'/'.$locale.'_'.basename($fileToTranslate);
@@ -82,16 +84,22 @@ class Translate {
             return self::findTranslateAndRestore($orgText, $strings);
         };
         // replace all {t}translate.me{/t} in replaceCb()
-        return preg_replace_callback('/{t}([\s\S]+?){\/t}/', $replaceCb, $rawText);
+        return preg_replace_callback(self::getTokenSet()->translateRegStr(), $replaceCb, $rawText);
     }
 
-    private static function findTranslateAndRestore(string $orgText, $strings) {
+    /**
+     *
+     * @param string $orgText text inside {t}
+     * @param array $strings
+     * @return string
+     */
+    static function findTranslateAndRestore(string $orgText, array $strings) : string {
         $key = $orgText;
         if (strlen($key) > self::MAX_KEY_LENGTH) {
             $key = substr($key, 0, self::MAX_KEY_LENGTH);
         }
         // search for not-to-translate section {n}keep{/n}
-        $ignoreStart = strpos($orgText, '{n}');
+        $ignoreStart = strpos($orgText, self::getTokenSet()->keepStartStr());
         $hasRestoreSection = $ignoreStart !== false;
         // key to match entry in translation files is first part until {n} (if existing)
         // and max length is MAX_KEY_LENGTH
@@ -107,7 +115,7 @@ class Translate {
     }
 
     private static function restore($originalText, $translatedText) {
-        $pattern = '/{n}([\s\S]+?){\/n}/m';
+        $pattern = self::getTokenSet()->keepRegStr().'m';
         // find sections in original text to keep in translation
         $originalMatches = array();
         preg_match_all($pattern, $originalText, $originalMatches);
@@ -117,7 +125,7 @@ class Translate {
             $count++;
             return $originalMatches[1][$count];
         };
-        return preg_replace_callback('/{n}([\s\S]+?){\/n}/', $ignore, $translatedText, -1, $count);
+        return preg_replace_callback(self::getTokenSet()->keepRegStr(), $ignore, $translatedText, -1, $count);
     }
 
     private static function getLangFile($locale) {
@@ -170,6 +178,13 @@ class Translate {
             $docRoot = getcwd();
         }
         return $docRoot;
+    }
+
+    private static function getTokenSet() : TokenSet {
+        if (self::$tokenSet == null) {
+            self::$tokenSet = TokenSet::default();
+        }
+        return self::$tokenSet;
     }
 }
 

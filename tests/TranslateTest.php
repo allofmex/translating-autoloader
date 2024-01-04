@@ -28,5 +28,13 @@ class TranslateTest extends TestCase {
         );
         assertEquals('Translated with link result', Translate::translate('{t}Text that has {n}with link{/n} (this part does not matter) within{/t}', $strings));
     }
+
+    public function testTranslateText_validText_working() {
+        $strings = array (
+            'aaa' => '{n}color{/n} car',
+        );
+        $text = 'My {t}aaa{n}red{/n}{/t} needs a bbb!!!';
+        assertEquals('My red car needs a bbb!!!', Translate::translate($text, $strings));
+    }
 }
 ?>
