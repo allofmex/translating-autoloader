@@ -2,15 +2,14 @@
 
 namespace Allofmex\TranslatingAutoLoader;
 
-use Symfony\Component\Yaml\Yaml;
-
 /**
  * Translates files and stores language specific versions to cache dir.
  *
  */
 class Translate {
 
-    static $strings = array();
+    static $dict = null;
+
     const MAX_KEY_LENGTH = 40;
 
     static $cacheDir = null;
@@ -20,31 +19,18 @@ class Translate {
     public static function translateFile($fileToTranslate, $locale) {
         $cacheDir = self::getCacheDir();
         $cacheFile = $cacheDir.'/'.$locale.'_'.basename($fileToTranslate);
-        $langFile = self::getLangFile($locale);
-        $langFilePhp = $cacheDir.'/lang-file_'.$locale.'.php';
-        $mTimeFile = filemtime($fileToTranslate);
-        $forceUpdate = false;
 
-        // check if language file was updated
-        if (!file_exists($langFilePhp) || filemtime($langFile) > $mTimeFile) {
-            self::parseLangFile($langFile, $langFilePhp);
-            $forceUpdate = true;
-        }
+        $mTimeFile = self::getDict()->checkUpToDate($locale);
 
         // check if cached translation file needs to be updated
-        if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile) || $forceUpdate) {
+        if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile)) {
             file_put_contents($cacheFile, self::translate(file_get_contents($fileToTranslate), self::getStringsForLocale($locale)), LOCK_EX);
         }
         return $cacheFile;
     }
 
     private static function getStringsForLocale($locale) : array {
-        $cacheDir = self::getCacheDir();
-        $langFilePhp = $cacheDir.'/lang-file_'.$locale.'.php';
-        if (!key_exists($locale, self::$strings)) {
-            self::$strings[$locale] = include $langFilePhp;
-        }
-        return self::$strings[$locale];
+        return self::getDict()->getStringsForLocale($locale);
     }
 
     /**
@@ -129,45 +115,31 @@ class Translate {
     }
 
     private static function getLangFile($locale) {
-        return self::getProjectRootDir().'/translations/'.$locale.'.yml';
-    }
-
-    private static function parseLangFile($langFile, $langFilePhp) {
-        if (file_exists($langFile)) {
-            $rawData = Yaml::parseFile($langFile);
-            // $rawData = yaml_parse_file($langFile);
-            // $rawData = parse_ini_file($langFile, false, INI_SCANNER_RAW);
-            if ($rawData != null) {
-                $keys = array_keys($rawData);
-                $values = array_values($rawData);
-                foreach ($keys as $keyIndex => $key) {
-                    if (strlen($key) > self::MAX_KEY_LENGTH) {
-                        $keys[$keyIndex] = trim(substr($key, 0, self::MAX_KEY_LENGTH));
-                    }
-                }
-                foreach ($values as $valueIndex => $value) {
-                    $values[$valueIndex] = trim($value);
-                }
-                $rawData = array_combine($keys, $values);
-            } else {
-                $rawData = array();
-            }
-        } else {
-            $rawData = array();
-        }
-        file_put_contents($langFilePhp, '<?php return '.var_export($rawData, true).';', LOCK_EX);
+        return self::getDict()->getLangFile($locale);
     }
 
     private static function getCacheDir() {
         if (self::$cacheDir === null) {
-            self::$cacheDir = self::getProjectRootDir().'/var/cache';
-            if (!file_exists(self::$cacheDir)) {
-                if (!mkdir(self::$cacheDir, 0700, true)) {
-                    throw new \Exception('Could not create dir '.self::$cacheDir.', please make sure the file permission are correct');
+            if (defined('TRANSLATIONS_CACHE')) {
+                self::$cacheDir = TRANSLATIONS_CACHE;
+            } else {
+                self::$cacheDir = self::getProjectRootDir().'/var/cache';
+                if (!file_exists(self::$cacheDir)) {
+                    if (!mkdir(self::$cacheDir, 0700, true)) {
+                        throw new \Exception('Could not create dir '.self::$cacheDir.', please make sure the file permission are correct');
+                    }
                 }
             }
         }
         return self::$cacheDir;
+    }
+
+    public static function getTranslationsDir() : string {
+        if (defined('TRANSLATIONS_ROOT')) {
+            return TRANSLATIONS_ROOT;
+        } else {
+            return self::getProjectRootDir().'/translations';
+        }
     }
 
     private static function getProjectRootDir() {
@@ -185,6 +157,13 @@ class Translate {
             self::$tokenSet = TokenSet::default();
         }
         return self::$tokenSet;
+    }
+
+    private static function getDict() : Dictionary {
+        if (self::$dict === null) {
+            self::$dict = new Dictionary(self::getTranslationsDir(), self::getCacheDir());
+        }
+        return self::$dict;
     }
 }
 

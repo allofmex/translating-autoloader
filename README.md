@@ -78,6 +78,7 @@ Klick {first link} oder {another link}. : |
     {n}{/n} or {n}{/n} is clickable.
 ```
 
+You may choose a custom translation-files path by setting `TRANSLATIONS_ROOT` constant like `define(TRANSLATIONS_ROOT, '/var/www-root/my-translations');`
 
 ##### Auto-loading
 Change your auto-loading calls:
@@ -145,6 +146,7 @@ return array(
 ##### Cache
 Files will be translated only once on very first access (file-changed time, not per client-session). Translated result is saved to `var/cache/` (`en_filename.php`) and loaded from there on following auto-load calls. In case of problems, you may delete the cached files, they will be recreated on next access.
 
+Custom cache path may be set by setting `TRANSLATIONS_CACHE` constant like `define(TRANSLATIONS_CACHE, '/tmp/my/cache');`
 
 ## Testing
 

@@ -12,7 +12,7 @@ use function Composer\Autoload\includeFile;
 class TranslatingAutoLoader {
 
     /**
-     * 
+     *
      * @var TranslatingAutoLoader
      */
     static $instance = null;
@@ -53,7 +53,7 @@ class TranslatingAutoLoader {
     }
 
     private function loadConfig() {
-        $file = $_SERVER['DOCUMENT_ROOT'].'/../translations/translating_autoloader.config.php';
+        $file = Translate::getTranslationsDir().'/translating_autoloader.config.php';
         if (file_exists($file)) {
             $config = require($file);
             if (isset($config['classToTranslate'])) {
@@ -85,7 +85,7 @@ class TranslatingAutoLoader {
         if ($parts === false || count($parts) < 2) {
             throw new \Exception('No line with call to function '.FUN_NAME.' found in '.$file);
         }
-        // extract 'use ' statements existing before call to this function to re-append later 
+        // extract 'use ' statements existing before call to this function to re-append later
         preg_match_all('/^use.*$/m', $parts[0], $existingUse);
         $existingUseStatements = implode(PHP_EOL, $existingUse[0]);
 
