@@ -28,7 +28,25 @@ class TranslateTest extends TestCase {
 
         $this->assertEquals(TRANSLATIONS_CACHE.'/de_source.php', $tgtFile);
         $this->assertFileExists($tgtFile);
-        $this->assertEquals('A car is called Auto in German.', file_get_contents($tgtFile));
+        $this->assertFileContent('A car is called Auto in German.', $tgtFile);
+
+    }
+
+    public function testCache_ifTranslationsFileChanged_refreshed() : void {
+        $srcFile = TESTING_WORK_DIR.'/source.php';
+        file_put_contents($srcFile, 'abc {t}replace-me{/t} def');
+        $translFile = TRANSLATIONS_ROOT.'/de.yml';
+
+        // trigger loading of original version
+        DictionaryTest::prepareLangYmlFile($translFile, ['replace-me' => 'old']);
+        $cacheFile = Translate::translateFile($srcFile, 'de');
+        $this->assertFileContent('abc old def', $cacheFile);
+
+        // update translations file, must invalidate cache and use new version in translateFile
+        sleep(1); // to allow file mtime to change
+        DictionaryTest::prepareLangYmlFile($translFile, ['replace-me' => 'new']);
+        $cacheFile = Translate::translateFile($srcFile, 'de');
+        $this->assertFileContent('abc new def', $cacheFile);
     }
 
     private function cleanup() {
@@ -39,6 +57,10 @@ class TranslateTest extends TestCase {
                 $file->isDir() ? rmdir($file) : unlink($file);
             }
         }
+    }
+
+    private function assertFileContent(string $expTxt, string $file) : void {
+        $this->assertEquals($expTxt, file_get_contents($file), 'File content missmatch');
     }
 }
 ?>

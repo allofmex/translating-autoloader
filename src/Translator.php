@@ -27,7 +27,6 @@ class Translator {
      * @return string translated text
      */
     public function translate(string $rawText, string $locale) : string {
-        $strings = $this->dict->getStringsForLocale($locale);
         $replaceCb = function($match) use (&$locale) {
             $orgText = $match[1];
             return $this->translateString($orgText, $locale);

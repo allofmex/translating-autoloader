@@ -9,7 +9,7 @@ class Dictionary {
     private $translationsDir;
     private $cacheDir;
 
-    private $cacheChecked = false;
+    private $lastChecked = -1;
 
     function __construct(string $translationsDir, string $cacheDir) {
         $this->translationsDir = $translationsDir;
@@ -25,12 +25,13 @@ class Dictionary {
      * @return int mtime (Unix timestamp) of translation files
      */
     public function checkUpToDate(string $locale) : int {
-        $this->cacheChecked = true;
+        $this->lastChecked = time();
         $langFile = $this->getLangFile($locale);
         $langFilePhp = $this->getLangFilePhp($locale);
         $mTimeCache = file_exists($langFilePhp) ? filemtime($langFilePhp) : -1;
         // check if language file was updated
         if (filemtime($langFile) > $mTimeCache) {
+            unset($this->strings[$locale]);
             $this->parseLangFile($langFile, $langFilePhp);
             return filemtime($langFilePhp);
         } else {
@@ -39,7 +40,8 @@ class Dictionary {
     }
 
     public function getStringsForLocale(string $locale) : array {
-        if (!$this->cacheChecked) {
+        if (time() > $this->lastChecked + 1) {
+            // do not check on every call, 1-2 seconds should be enough to check only once for most backend requests
             $this->checkUpToDate($locale);
         }
 

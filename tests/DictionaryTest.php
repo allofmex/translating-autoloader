@@ -15,9 +15,9 @@ class DictionaryTest extends TestCase {
      * @see \PHPUnit\Framework\TestCase::setUp()
      */
     public function setUp() : void {
-        $this->testDir = sys_get_temp_dir().'/translating-autoloader-tmp';
-        $this->cacheDir = $this->testDir.'/cache';
-        $this->translationsDir = $this->testDir.'/translations';
+        $this->testDir = TESTING_WORK_DIR;
+        $this->cacheDir = TRANSLATIONS_CACHE;
+        $this->translationsDir = TRANSLATIONS_ROOT;
 
         register_shutdown_function(function() { $this->cleanup(); });
 
@@ -29,7 +29,6 @@ class DictionaryTest extends TestCase {
 
 
     public function testCheckUpToDate_outdatedCache_mustUpdate() : void {
-        $this->assertTrue(true);
         $dict = new Dictionary($this->translationsDir, $this->cacheDir);
 
         $translFile = $this->translationsDir.'/de.yml';
@@ -39,7 +38,9 @@ class DictionaryTest extends TestCase {
         self::prepareLangYmlFile($translFile, ['new' => 'neu']);
 
         $now = time();
-        touch($cacheFile, $now - 200); // cache older than translations file
+        touch($cacheFile, $now - 10); // cache older than translations file
+        $mTime = $dict->checkUpToDate('de');
+
         touch($translFile, $now);
 
         // must update cacheFile
@@ -50,8 +51,28 @@ class DictionaryTest extends TestCase {
         $this->assertLangPhpFile($this->cacheDir.'/lang-file_de.php', ['new' => 'neu']);
     }
 
+    public function testGetStringsForLocale_translationFileChanges_mustRefreshCache() : void {
+        $dict = new Dictionary($this->translationsDir, $this->cacheDir);
+
+        $translFile = $this->translationsDir.'/de.yml';
+        self::prepareLangYmlFile($translFile, ['old' => 'alt']);
+
+        // trigger loading of old version
+        $this->assertEquals(['old' => 'alt'], $dict->getStringsForLocale('de'));
+        $this->assertLangPhpFile($this->cacheDir.'/lang-file_de.php', ['old' => 'alt']);
+
+        // simulate time passed (update check is only run every 1-2 seconds
+        sleep(2);
+
+        // now place new translations-file version
+        self::prepareLangYmlFile($translFile, ['new' => 'neu']);
+
+        // must not use old version from cache but must have updated cache
+        $this->assertEquals(['new' => 'neu'], $dict->getStringsForLocale('de'));
+        $this->assertLangPhpFile($this->cacheDir.'/lang-file_de.php', ['new' => 'neu']);
+    }
+
     public function testCheckUpToDate_upToDateCache_mustNotUpdate() : void {
-        $this->assertTrue(true);
         $dict = new Dictionary($this->translationsDir, $this->cacheDir);
 
         $translFile = $this->translationsDir.'/de.yml';
@@ -99,6 +120,10 @@ class DictionaryTest extends TestCase {
                 $file->isDir() ? rmdir($file) : unlink($file);
             }
         }
+    }
+
+    private function assertFileContent(string $expTxt, string $file) : void {
+        $this->assertEquals($expTxt, file_get_contents($file), 'File content missmatch');
     }
 
     static function mockDict(array $strings, TestCase $testCase) : Dictionary {
