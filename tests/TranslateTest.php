@@ -49,6 +49,24 @@ class TranslateTest extends TestCase {
         $this->assertFileContent('abc new def', $cacheFile);
     }
 
+    public function testCache_ifSrcFileChanged_refreshed() : void {
+        $translFile = TRANSLATIONS_ROOT.'/de.yml';
+        DictionaryTest::prepareLangYmlFile($translFile, ['replace-me' => 'text']);
+
+        $srcFile = TESTING_WORK_DIR.'/source.php';
+        file_put_contents($srcFile, 'old {t}replace-me{/t} old');
+
+        // trigger loading of original version
+        $cacheFile = Translate::translateFile($srcFile, 'de');
+        $this->assertFileContent('old text old', $cacheFile);
+
+        // update source file, must invalidate cache and return new version
+        sleep(1); // to allow file mtime to change
+        file_put_contents($srcFile, 'new {t}replace-me{/t} new');
+        $cacheFile = Translate::translateFile($srcFile, 'de');
+        $this->assertFileContent('new text new', $cacheFile);
+    }
+
     private function cleanup() {
         if(file_exists(TESTING_WORK_DIR)) {
             $dirIt = new \RecursiveDirectoryIterator(TESTING_WORK_DIR, \FilesystemIterator::SKIP_DOTS);

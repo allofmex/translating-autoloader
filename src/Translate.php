@@ -21,10 +21,11 @@ class Translate {
         $cacheDir = self::getCacheDir();
         $cacheFile = $cacheDir.'/'.$locale.'_'.basename($fileToTranslate);
 
-        $mTimeFile = self::getDict()->checkUpToDate($locale);
+        $mTimeTranslationFile = self::getDict()->checkUpToDate($locale);
 
         // check if cached translation file needs to be updated
-        if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile)) {
+        if (!file_exists($cacheFile) || $mTimeTranslationFile > filemtime($cacheFile) || $mTimeTranslationFile < filemtime($fileToTranslate)) {
+            // update if translations-file or fileToTranslate is newer than existing cacheFile
             file_put_contents($cacheFile, self::getTranslator()->translate(file_get_contents($fileToTranslate), $locale), LOCK_EX);
         }
         return $cacheFile;
