@@ -18,7 +18,7 @@ class Translator {
     public function translate($rawText, $strings) {
         $replaceCb = function($match) use (&$strings) {
             $orgText = $match[1];
-            return self::findTranslateAndRestore($orgText, $strings);
+            return $this->translateString($orgText, $strings);
         };
         // replace all {t}translate.me{/t} in replaceCb()
         return preg_replace_callback($this->tokenSet->translateRegStr(), $replaceCb, $rawText);
@@ -30,7 +30,7 @@ class Translator {
      * @param array $strings
      * @return string
      */
-    public function findTranslateAndRestore(string $orgText, array $strings) : string {
+    public function translateString(string $orgText, array $strings) : string {
         $key = $orgText;
         if (strlen($key) > Translate::MAX_KEY_LENGTH) {
             $key = substr($key, 0, Translate::MAX_KEY_LENGTH);
@@ -64,13 +64,4 @@ class Translator {
         };
         return preg_replace_callback($this->tokenSet->keepRegStr(), $ignore, $translatedText, -1, $count);
     }
-
-//     public static function getTokenSet() : TokenSet {
-//         if (self::$tokenSet == null) {
-//             self::$tokenSet = TokenSet::default();
-//         }
-//         return self::$tokenSet;
-//     }
-
-
 }

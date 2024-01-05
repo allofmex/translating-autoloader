@@ -14,8 +14,12 @@ class TokenSet {
      * "{t}Translate me {n}except this{/n} but including this{/t}"
      * @return \Allofmex\TranslatingAutoLoader\TokenSet
      */
-    public static function default() {
+    public static function default() : TokenSet {
         return new TokenSet('t', 'n', self::CURVED_BRACKETS);
+    }
+
+    public static function custom(string $translateTag, string $keepTag, string $startBracket, $endBracket) : TokenSet {
+        return new TokenSet($translateTag, $keepTag, [$startBracket, $endBracket]);
     }
 
     private function __construct(string $translateTag, $keepTag, array $enclosure) {
@@ -43,7 +47,7 @@ class TokenSet {
     }
 
     function keepStartStr() : string {
-        return $this->makeTag('n');
+        return $this->makeTag($this->keepTag);
     }
 
     private function makeRegStr(string $tag) {

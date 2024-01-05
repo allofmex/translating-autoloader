@@ -45,7 +45,7 @@ class Translate {
      * @return string
      */
     public static function translateString(string $text, string $locale) : string {
-        return self::getTranslator()->findTranslateAndRestore($text, self::getStringsForLocale($locale));
+        return self::getTranslator()->translateString($text, self::getStringsForLocale($locale));
     }
 
     /**
@@ -59,11 +59,15 @@ class Translate {
         return self::getTranslator()->translate($text, self::getStringsForLocale($locale));
     }
 
-    static function getTranslator() {
-        if (self::$defTranslator === null) {
-            self::$defTranslator = new Translator(TokenSet::default());
+    static function getTranslator(TokenSet $tokenSet = null) : Translator {
+        if ($tokenSet === null) {
+            if (self::$defTranslator === null) {
+                self::$defTranslator = new Translator(TokenSet::default());
+            }
+            return self::$defTranslator;
+        } else {
+            return new Translator($tokenSet);
         }
-        return self::$defTranslator;
     }
 
     private static function getCacheDir() {

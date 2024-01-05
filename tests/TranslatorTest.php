@@ -28,6 +28,24 @@ class TranslatorTest extends TestCase {
     public function testTranslateText_validText_working() : void {
         $translator = new Translator(TokenSet::default());
         $strings = ['car' => '{n}color of car{/n} auto'];
-        $this->assertEquals('My red auto needs a bbb!!!', $translator->translate('My {t}car{n}red{/n}{/t} needs a bbb!!!', $strings));
+        $this->assertEquals('My red auto needs a wash!!!', $translator->translate('My {t}car{n}red{/n}{/t} needs a wash!!!', $strings));
+    }
+
+    public function testMultiTag_ownTags_replacedOnly() : void {
+        $de = ['car local name' => 'Auto {n}price{/n} Euro'];
+        $pl = ['car local name' => 'samochód {N}price{/N} Sloty'];
+        $deTranslator = new Translator(TokenSet::default());
+        $plTranslator = new Translator(TokenSet::custom('T', 'N', '{', '}'));
+
+        // text with {t} section that must be replaced by deTranslator only and {T} section for plTranslator only
+        $text = 'Pricelist: in Germany {t}car local name {n}1000{/n} in currency{/t}, in Poland {T}car local name {N}5000{/N} in currency{/T}!';
+
+        $this->assertEquals('Pricelist: in Germany Auto 1000 Euro, in Poland {T}car local name {N}5000{/N} in currency{/T}!',
+                $deTranslator->translate($text, $de),
+                'Must have translated lowercase t/n tags only');
+
+        $this->assertEquals('Pricelist: in Germany {t}car local name {n}1000{/n} in currency{/t}, in Poland samochód 5000 Sloty!',
+                $plTranslator->translate($text, $pl),
+                'Must have translated uppercase T/N tags only');
     }
 }
