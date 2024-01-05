@@ -1,7 +1,7 @@
 <?php
 namespace Allofmex\TranslatingAutoLoader;
 
-require 'TranslatingAutoLoader.php';
+require_once 'TranslatingAutoLoader.php';
 
 $instance = new TranslatingAutoLoader();
 $instance->init();

@@ -2,6 +2,8 @@
 
 namespace Allofmex\TranslatingAutoLoader;
 
+use Allofmex\TranslatingAutoLoader\TranslatingAutoLoader;
+
 /**
  * Translates files and stores language specific versions to cache dir.
  *
@@ -75,7 +77,7 @@ class Translate {
             if (defined('TRANSLATIONS_CACHE')) {
                 self::$cacheDir = TRANSLATIONS_CACHE;
             } else {
-                self::$cacheDir = self::getProjectRootDir().'/var/cache';
+                self::$cacheDir = TranslatingAutoLoader::getProjectRootDir().'/var/cache';
                 if (!file_exists(self::$cacheDir)) {
                     if (!mkdir(self::$cacheDir, 0700, true)) {
                         throw new \Exception('Could not create dir '.self::$cacheDir.', please make sure the file permission are correct');
@@ -86,27 +88,9 @@ class Translate {
         return self::$cacheDir;
     }
 
-    static function getTranslationsDir() : string {
-        if (defined('TRANSLATIONS_ROOT')) {
-            return TRANSLATIONS_ROOT;
-        } else {
-            return self::getProjectRootDir().'/translations';
-        }
-    }
-
-    private static function getProjectRootDir() {
-        if (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] !== '') {
-            $docRoot = realpath($_SERVER['DOCUMENT_ROOT'].'/..');
-        } else {
-            // fallback for testing,...
-            $docRoot = getcwd();
-        }
-        return $docRoot;
-    }
-
     private static function getDict() : Dictionary {
         if (self::$dict === null) {
-            self::$dict = new Dictionary(self::getTranslationsDir(), self::getCacheDir());
+            self::$dict = new Dictionary(TranslatingAutoLoader::getTranslationsDir(), self::getCacheDir());
         }
         return self::$dict;
     }

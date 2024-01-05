@@ -22,10 +22,10 @@ class TranslatingAutoLoader {
     public function init() {
         self::$instance = $this;
         if (file_exists(__DIR__.'/../../../autoload.php')) {
-            $composerLoader = require __DIR__.'/../../../autoload.php';
+            $composerLoader = include __DIR__.'/../../../autoload.php';
         } else if (file_exists(__DIR__.'/../vendor/autoload.php')) {
             // testing environment only
-            $composerLoader = require __DIR__.'/../vendor/autoload.php';
+            $composerLoader = include __DIR__.'/../vendor/autoload.php';
         } else {
             throw new \Exception('Composer autoloader not found!');
         }
@@ -53,7 +53,7 @@ class TranslatingAutoLoader {
     }
 
     private function loadConfig() {
-        $file = Translate::getTranslationsDir().'/translating_autoloader.config.php';
+        $file = self::getTranslationsDir().'/translating_autoloader.config.php';
         if (file_exists($file)) {
             $config = require($file);
             if (isset($config['classToTranslate'])) {
@@ -110,5 +110,23 @@ class TranslatingAutoLoader {
         if (self::$instance !== null) {
             self::$instance->isToTranslateCb = null;
         }
+    }
+
+    static function getTranslationsDir() : string {
+        if (defined('TRANSLATIONS_ROOT')) {
+            return TRANSLATIONS_ROOT;
+        } else {
+            return self::getProjectRootDir().'/translations';
+        }
+    }
+
+    static function getProjectRootDir() {
+        if (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] !== '') {
+            $docRoot = realpath($_SERVER['DOCUMENT_ROOT'].'/..');
+        } else {
+            // fallback for testing,...
+            $docRoot = getcwd();
+        }
+        return $docRoot;
     }
 }
