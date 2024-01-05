@@ -38,17 +38,19 @@ class Dictionary {
         }
     }
 
-    public function getStringsForLocale($locale) : array {
+    public function getStringsForLocale(string $locale) : array {
         if (!$this->cacheChecked) {
             $this->checkUpToDate($locale);
         }
+
         if (!key_exists($locale, $this->strings)) {
-            $this->strings[$locale] = include $this->getLangFilePhp($locale);
+            $langFile = $this->getLangFilePhp($locale);
+            $this->strings[$locale] = file_exists($langFile) ? include $langFile : array();
         }
         return $this->strings[$locale];
     }
 
-    private function getLangFile($locale) {
+    private function getLangFile(string $locale) : string {
         return $this->translationsDir.'/'.$locale.'.yml';
     }
 
@@ -56,7 +58,7 @@ class Dictionary {
         return $this->cacheDir.'/lang-file_'.$locale.'.php';
     }
 
-    private function parseLangFile($langFile, $langFilePhp) {
+    private function parseLangFile($langFile, $langFilePhp) : void {
         if (file_exists($langFile)) {
             $rawData = Yaml::parseFile($langFile);
             if ($rawData != null) {

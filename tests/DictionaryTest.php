@@ -100,4 +100,12 @@ class DictionaryTest extends TestCase {
             }
         }
     }
+
+    static function mockDict(array $strings, TestCase $testCase) : Dictionary {
+        $mock = $testCase->createMock(Dictionary::class);
+        $mock->method('getStringsForLocale')->willReturnCallback(function ($locale) use (&$strings) {
+            return array_key_exists($locale, $strings) ? $strings[$locale] : array();
+        });
+        return $mock;
+    }
 }

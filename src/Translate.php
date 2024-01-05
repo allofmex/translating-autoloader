@@ -8,14 +8,12 @@ namespace Allofmex\TranslatingAutoLoader;
  */
 class Translate {
 
-    static $dict = null;
-
     const MAX_KEY_LENGTH = 40;
 
-    static $cacheDir = null;
-
-
+    private static $dict = null;
     private static $defTranslator = null;
+
+    private static $cacheDir = null;
 
     public static function translateFile($fileToTranslate, $locale) {
         $cacheDir = self::getCacheDir();
@@ -25,13 +23,9 @@ class Translate {
 
         // check if cached translation file needs to be updated
         if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile)) {
-            file_put_contents($cacheFile, self::getTranslator()->translate(file_get_contents($fileToTranslate), self::getStringsForLocale($locale)), LOCK_EX);
+            file_put_contents($cacheFile, self::getTranslator()->translate(file_get_contents($fileToTranslate), $locale), LOCK_EX);
         }
         return $cacheFile;
-    }
-
-    private static function getStringsForLocale($locale) : array {
-        return self::getDict()->getStringsForLocale($locale);
     }
 
     /**
@@ -45,7 +39,7 @@ class Translate {
      * @return string
      */
     public static function translateString(string $text, string $locale) : string {
-        return self::getTranslator()->translateString($text, self::getStringsForLocale($locale));
+        return self::getTranslator()->translateString($text, $locale);
     }
 
     /**
@@ -56,17 +50,17 @@ class Translate {
      * @return string translated text
      */
     public static function translateText(string $text, string $locale) : string {
-        return self::getTranslator()->translate($text, self::getStringsForLocale($locale));
+        return self::getTranslator()->translate($text, $locale);
     }
 
     static function getTranslator(TokenSet $tokenSet = null) : Translator {
         if ($tokenSet === null) {
             if (self::$defTranslator === null) {
-                self::$defTranslator = new Translator(TokenSet::default());
+                self::$defTranslator = new Translator(TokenSet::default(), self::getDict());
             }
             return self::$defTranslator;
         } else {
-            return new Translator($tokenSet);
+            return new Translator($tokenSet, self::getDict());
         }
     }
 
@@ -86,7 +80,7 @@ class Translate {
         return self::$cacheDir;
     }
 
-    public static function getTranslationsDir() : string {
+    static function getTranslationsDir() : string {
         if (defined('TRANSLATIONS_ROOT')) {
             return TRANSLATIONS_ROOT;
         } else {

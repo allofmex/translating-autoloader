@@ -3,10 +3,21 @@ namespace Allofmex\TranslatingAutoLoader;
 
 class Translator {
 
-    private $tokenSet = null;
+    /**
+     *
+     * @var TokenSet
+     */
+    private $tokenSet;
 
-    function __construct(TokenSet $tokenSet) {
+    /**
+     *
+     * @var Dictionary
+     */
+    private $dict;
+
+    function __construct(TokenSet $tokenSet, Dictionary $dict) {
         $this->tokenSet = $tokenSet;
+        $this->dict = $dict;
     }
 
     /**
@@ -15,10 +26,11 @@ class Translator {
      * @param string $langFilePhp
      * @return string translated text
      */
-    public function translate($rawText, $strings) {
-        $replaceCb = function($match) use (&$strings) {
+    public function translate(string $rawText, string $locale) : string {
+        $strings = $this->dict->getStringsForLocale($locale);
+        $replaceCb = function($match) use (&$locale) {
             $orgText = $match[1];
-            return $this->translateString($orgText, $strings);
+            return $this->translateString($orgText, $locale);
         };
         // replace all {t}translate.me{/t} in replaceCb()
         return preg_replace_callback($this->tokenSet->translateRegStr(), $replaceCb, $rawText);
@@ -30,7 +42,7 @@ class Translator {
      * @param array $strings
      * @return string
      */
-    public function translateString(string $orgText, array $strings) : string {
+    public function translateString(string $orgText, string $locale) : string {
         $key = $orgText;
         if (strlen($key) > Translate::MAX_KEY_LENGTH) {
             $key = substr($key, 0, Translate::MAX_KEY_LENGTH);
@@ -41,6 +53,7 @@ class Translator {
         // key to match entry in translation files is first part until {n} (if existing)
         // and max length is MAX_KEY_LENGTH
         $key = trim($hasRestoreSection ? substr($key, 0, $ignoreStart) : $key);
+        $strings = $this->dict->getStringsForLocale($locale);
         $translatedText = isset($strings[$key]) ? $strings[$key] : $orgText;
 
         if ($hasRestoreSection) {
@@ -51,7 +64,7 @@ class Translator {
         }
     }
 
-    private function restore($originalText, $translatedText) {
+    private function restore(string $originalText, string $translatedText) : string {
         $pattern = $this->tokenSet->keepRegStr().'m';
         // find sections in original text to keep in translation
         $originalMatches = array();
