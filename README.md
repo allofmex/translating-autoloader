@@ -143,6 +143,33 @@ return array(
 );
 ```
 
+##### Multi level translation
+
+Some usecases may require to translate parts of a class to another locale than the primary class content.
+For example the frontend/autoloader uses German, but the class is used to editing an email targeting language french.
+If your class has strings used as templates for this email, they must not be translated to German as the rest of this class.
+
+In this case you may create a custom Translator with own TokenSet:
+
+```
+require ROOT_PATH.'../vendor/allofmex/translating-autoloader/src/autoload.php';
+
+class MailEditor {
+    function send() {
+        // Create a custom translator (in this case upper instead of lowercase tags)
+        $plTranslator = Translate::getTranslator(TokenSet::custom('T', 'N', '{', '}'));
+        
+        // this will not be touched by autoloader
+        $template = '{T}Hello{/T}. {T}Our offer: {N}1000{/N} in currency{/T}.';
+        
+        $frenchEmail = $deTranslator->translate($template, 'fr');
+        
+        return '{t}This will still be translated by autoloader{/t}';
+    }
+}
+```
+
+
 ##### Cache
 Files will be translated only once on very first access (file-changed time, not per client-session). Translated result is saved to `var/cache/` (`en_filename.php`) and loaded from there on following auto-load calls. In case of problems, you may delete the cached files, they will be recreated on next access.
 

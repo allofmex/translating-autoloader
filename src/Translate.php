@@ -53,7 +53,13 @@ class Translate {
         return self::getTranslator()->translate($text, $locale);
     }
 
-    static function getTranslator(TokenSet $tokenSet = null) : Translator {
+    /**
+     * You may use this to aquire a custom translator with a non-default TokenSet.
+     *
+     * @param TokenSet $tokenSet
+     * @return Translator
+     */
+    public static function getTranslator(TokenSet $tokenSet = null) : Translator {
         if ($tokenSet === null) {
             if (self::$defTranslator === null) {
                 self::$defTranslator = new Translator(TokenSet::default(), self::getDict());
