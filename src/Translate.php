@@ -14,7 +14,8 @@ class Translate {
 
     static $cacheDir = null;
 
-    private static $tokenSet = null;
+
+    private static $defTranslator = null;
 
     public static function translateFile($fileToTranslate, $locale) {
         $cacheDir = self::getCacheDir();
@@ -24,7 +25,7 @@ class Translate {
 
         // check if cached translation file needs to be updated
         if (!file_exists($cacheFile) || $mTimeFile > filemtime($cacheFile)) {
-            file_put_contents($cacheFile, self::translate(file_get_contents($fileToTranslate), self::getStringsForLocale($locale)), LOCK_EX);
+            file_put_contents($cacheFile, self::getTranslator()->translate(file_get_contents($fileToTranslate), self::getStringsForLocale($locale)), LOCK_EX);
         }
         return $cacheFile;
     }
@@ -44,7 +45,7 @@ class Translate {
      * @return string
      */
     public static function translateString(string $text, string $locale) : string {
-        return self::findTranslateAndRestore($text, self::getStringsForLocale($locale));
+        return self::getTranslator()->findTranslateAndRestore($text, self::getStringsForLocale($locale));
     }
 
     /**
@@ -55,67 +56,14 @@ class Translate {
      * @return string translated text
      */
     public static function translateText(string $text, string $locale) : string {
-        return self::translate($text, self::getStringsForLocale($locale));
+        return self::getTranslator()->translate($text, self::getStringsForLocale($locale));
     }
 
-    /**
-     *
-     * @param string $rawText original/untranslated text
-     * @param string $langFilePhp
-     * @return string translated text
-     */
-    static function translate($rawText, $strings) {
-        $replaceCb = function($match) use (&$strings) {
-            $orgText = $match[1];
-            return self::findTranslateAndRestore($orgText, $strings);
-        };
-        // replace all {t}translate.me{/t} in replaceCb()
-        return preg_replace_callback(self::getTokenSet()->translateRegStr(), $replaceCb, $rawText);
-    }
-
-    /**
-     *
-     * @param string $orgText text inside {t}
-     * @param array $strings
-     * @return string
-     */
-    static function findTranslateAndRestore(string $orgText, array $strings) : string {
-        $key = $orgText;
-        if (strlen($key) > self::MAX_KEY_LENGTH) {
-            $key = substr($key, 0, self::MAX_KEY_LENGTH);
+    static function getTranslator() {
+        if (self::$defTranslator === null) {
+            self::$defTranslator = new Translator(TokenSet::default());
         }
-        // search for not-to-translate section {n}keep{/n}
-        $ignoreStart = strpos($orgText, self::getTokenSet()->keepStartStr());
-        $hasRestoreSection = $ignoreStart !== false;
-        // key to match entry in translation files is first part until {n} (if existing)
-        // and max length is MAX_KEY_LENGTH
-        $key = trim($hasRestoreSection ? substr($key, 0, $ignoreStart) : $key);
-        $translatedText = isset($strings[$key]) ? $strings[$key] : $orgText;
-
-        if ($hasRestoreSection) {
-            // restore not-to-translate section from original texts section
-            return self::restore($orgText, $translatedText);
-        } else {
-            return $translatedText;
-        }
-    }
-
-    private static function restore($originalText, $translatedText) {
-        $pattern = self::getTokenSet()->keepRegStr().'m';
-        // find sections in original text to keep in translation
-        $originalMatches = array();
-        preg_match_all($pattern, $originalText, $originalMatches);
-        $count = -1;
-        $ignore = function($restoreMatch) use (&$translatedText, &$originalMatches, &$count) {
-            // replace translated text with sections from original text
-            $count++;
-            return $originalMatches[1][$count];
-        };
-        return preg_replace_callback(self::getTokenSet()->keepRegStr(), $ignore, $translatedText, -1, $count);
-    }
-
-    private static function getLangFile($locale) {
-        return self::getDict()->getLangFile($locale);
+        return self::$defTranslator;
     }
 
     private static function getCacheDir() {
@@ -150,13 +98,6 @@ class Translate {
             $docRoot = getcwd();
         }
         return $docRoot;
-    }
-
-    private static function getTokenSet() : TokenSet {
-        if (self::$tokenSet == null) {
-            self::$tokenSet = TokenSet::default();
-        }
-        return self::$tokenSet;
     }
 
     private static function getDict() : Dictionary {

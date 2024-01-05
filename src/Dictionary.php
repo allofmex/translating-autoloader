@@ -17,9 +17,12 @@ class Dictionary {
     }
 
     /**
-     * This must be called before
+     * This will update internal dictionary cache (only if translation-strings changed)
+     * You may use returned time to check/update other cache entries too. Update those caches
+     * if their last-modified time is older than returned timestamp
+     *
      * @param string $locale
-     * @return int mtime of cached translations file
+     * @return int mtime (Unix timestamp) of translation files
      */
     public function checkUpToDate(string $locale) : int {
         $this->cacheChecked = true;
@@ -45,7 +48,7 @@ class Dictionary {
         return $this->strings[$locale];
     }
 
-    public function getLangFile($locale) {
+    private function getLangFile($locale) {
         return $this->translationsDir.'/'.$locale.'.yml';
     }
 
