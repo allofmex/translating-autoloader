@@ -31,6 +31,24 @@ class TranslatorTest extends TestCase {
         $this->assertEquals('My red auto needs a wash!!!', $translator->translate('My {t}car{n}red{/n}{/t} needs a wash!!!', 'xy'));
     }
 
+    public function testTranslate_dictWithKeepButTextNot_implement() : void {
+        $this->markTestIncomplete('ToDo: implement');
+//         $strings = ['car' => 'Auto {n}speed{/n} maximum, allowed {n}other speed{/n} on highways']; // 2 keep sections
+//         $translator = new Translator(TokenSet::default(), DictionaryTest::mockDict(['en' => $strings], $this));
+//         $this->assertEquals(
+//                 '???', // To decide: Exception?
+//                 $translator->translate('{t}car {n}100 km/h{/n} max{/t}', 'en')); // missing second keep section
+    }
+
+    public function testTranslate_invalidDictEntry_implement() : void {
+        $this->markTestIncomplete('ToDo: implement');
+//         $strings = ['car' => 'auto']; // missing keep section
+//         $translator = new Translator(TokenSet::default(), DictionaryTest::mockDict(['de' => $strings], $this));
+//         $this->assertEquals(
+//                 '???', // To decide: Exception? Keep untranslated? Or append keep after?
+//                 $translator->translate('{t}car {n}value{/n} maximum{/t}', 'de'));
+    }
+
     public function testMultiTag_ownTags_replacedOnly() : void {
         // dictionary always uses default tags!
         $de = ['car local name' => 'Auto {n}price{/n} Euro'];
@@ -54,20 +72,13 @@ class TranslatorTest extends TestCase {
 
 
     public function testMultiTag_noDict_mustHandleKeepTags() : void {
-        // dictionary always uses default tags!
-        $de = [];
-//         $pl = ['car local name' => 'samochód {n}price{/n} Sloty'];
-        $dict = DictionaryTest::mockDict(['de' => $de], $this);
+        // no entry for string present in dictionary
+        $dict = DictionaryTest::mockDict(['de' => []], $this);
 
-//         $deTranslator = new Translator(TokenSet::default(), $dict);
         $customTranslator = new Translator(TokenSet::custom('T', 'N', '{', '}'), $dict);
 
-        // text with {t} section that must be replaced by deTranslator only and {T} section for plTranslator only
+        // text without matching entries in dictionary, Translator must simply strip all tags
         $text = '{T}car {N}1000{/N} dollar{/T}!';
-
-//         $this->assertEquals('Pricelist: in Germany Auto 1000 Euro, in Poland {T}car local name {N}5000{/N} in currency{/T}!',
-//                 $deTranslator->translate($text, 'de'),
-//                 'Must have translated lowercase t/n tags only');
 
         $this->assertEquals('car 1000 dollar!',
                 $customTranslator->translate($text, 'de'),
