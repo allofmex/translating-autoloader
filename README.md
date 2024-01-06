@@ -109,7 +109,7 @@ require Translate::translateFile(ROOT_PATH.'../templates/my-page.php', LANG);
 ```
 
 ### Additional details
-##### Tags
+#### Tags
 Wrap all texts that need to be translated in `{t} {/t}`. You may also insert (multiple) `{n} {/n}` sections within those strings to keep original test.
 
 ```
@@ -127,7 +127,7 @@ Example:
 - use `echo {t}link to translate {n}link{/n}{/t}.` and in translation file the real order: `link to translate: This {n}link{/n} needs translation `
 
 
-##### Define only specific classes to be translated
+#### Define only specific classes to be translated
 
 By default, all auto-loaded classes will be translated. If most of your classes do not have text-to-translate, you may whitelist only specific classes to franslation by creating the following file
 
@@ -143,13 +143,13 @@ return array(
 );
 ```
 
-##### Multi level translation
+#### Multi level translation
 
-Some usecases may require to translate parts of a class to another locale than the primary class content.
+Some use cases may require to translate parts of a class to another locale than the primary class content.
 For example the frontend/autoloader uses German, but the class is used to editing an email targeting language french.
 If your class has strings used as templates for this email, they must not be translated to German as the rest of this class.
 
-In this case you may create a custom Translator with own TokenSet:
+In this case you may create a custom Translator with it's own TokenSet:
 
 ```
 require ROOT_PATH.'../vendor/allofmex/translating-autoloader/src/autoload.php';
@@ -169,8 +169,11 @@ class MailEditor {
 }
 ```
 
+**Always uses the default (keep) tags** in your dictionary (`translations/de.ym`)! That way you are 
+able to use the same strings for all TokenSets.
 
-##### Cache
+
+#### Cache
 Files will be translated only once on very first access (file-changed time, not per client-session). Translated result is saved to `var/cache/` (`en_filename.php`) and loaded from there on following auto-load calls. In case of problems, you may delete the cached files, they will be recreated on next access.
 
 Custom cache path may be set by setting `TRANSLATIONS_CACHE` constant like `define(TRANSLATIONS_CACHE, '/tmp/my/cache');`

@@ -9,17 +9,23 @@ class TokenSet {
     private $translateTag;
     private $keepTag;
 
+    private $dictTokenSet;
+
     /**
      * Original {t} and {n} tags.
      * "{t}Translate me {n}except this{/n} but including this{/t}"
      * @return \Allofmex\TranslatingAutoLoader\TokenSet
      */
     public static function default() : TokenSet {
-        return new TokenSet('t', 'n', self::CURVED_BRACKETS);
+        $token = new TokenSet('t', 'n', self::CURVED_BRACKETS);
+        $token->setDictTokenSet($token);
+        return $token;
     }
 
     public static function custom(string $translateTag, string $keepTag, string $startBracket, $endBracket) : TokenSet {
-        return new TokenSet($translateTag, $keepTag, [$startBracket, $endBracket]);
+        $token = new TokenSet($translateTag, $keepTag, [$startBracket, $endBracket]);
+        $token->setDictTokenSet(self::default());
+        return $token;
     }
 
     private function __construct(string $translateTag, $keepTag, array $enclosure) {
@@ -34,6 +40,10 @@ class TokenSet {
         $this->keepTag = $keepTag;
     }
 
+    private function setDictTokenSet(TokenSet $dictToken) {
+        $this->dictTokenSet = $dictToken;
+    }
+
     /**
      *
      * @return string regex string like '/{t}([\s\S]+?){\/t}/' matching content of tag
@@ -44,6 +54,10 @@ class TokenSet {
 
     function keepRegStr() : string {
         return $this->makeRegStr($this->keepTag);
+    }
+
+    function keepDictRegStr() : string {
+        return $this->makeRegStr($this->dictTokenSet->keepTag);
     }
 
     function keepStartStr() : string {

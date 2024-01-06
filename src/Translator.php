@@ -74,6 +74,6 @@ class Translator {
             $count++;
             return $originalMatches[1][$count];
         };
-        return preg_replace_callback($this->tokenSet->keepRegStr(), $ignore, $translatedText, -1, $count);
+        return preg_replace_callback($this->tokenSet->keepDictRegStr(), $ignore, $translatedText, -1, $count);
     }
 }

@@ -32,8 +32,9 @@ class TranslatorTest extends TestCase {
     }
 
     public function testMultiTag_ownTags_replacedOnly() : void {
+        // dictionary always uses default tags!
         $de = ['car local name' => 'Auto {n}price{/n} Euro'];
-        $pl = ['car local name' => 'samochód {N}price{/N} Sloty'];
+        $pl = ['car local name' => 'samochód {n}price{/n} Sloty'];
         $dict = DictionaryTest::mockDict(['de' => $de, 'pl' => $pl,], $this);
 
         $deTranslator = new Translator(TokenSet::default(), $dict);
