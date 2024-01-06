@@ -53,27 +53,42 @@ class Translator {
         // and max length is MAX_KEY_LENGTH
         $key = trim($hasRestoreSection ? substr($key, 0, $ignoreStart) : $key);
         $strings = $this->dict->getStringsForLocale($locale);
-        $translatedText = isset($strings[$key]) ? $strings[$key] : $orgText;
+        if (isset($strings[$key])) { // $translatedText has default tags (if keep present)
+            $translatedText = $strings[$key];
+            $useDictRestore = true;
+        } else { // no entry in dictionary, we use original text
+            $translatedText = $orgText;
+            $useDictRestore = false;
+        }
 
         if ($hasRestoreSection) {
             // restore not-to-translate section from original texts section
-            return $this->restore($orgText, $translatedText);
+            return $this->restore($orgText, $translatedText, $useDictRestore);
         } else {
             return $translatedText;
         }
     }
 
-    private function restore(string $originalText, string $translatedText) : string {
-        $pattern = $this->tokenSet->keepRegStr().'m';
+    /**
+     *
+     * @param string $originalText witout {t} tags
+     * @param string $translatedText target text but still containing keep tags
+     * @param bool $useDictRestore If true, $translatedText is from dictionary (with default keep tags).
+     *              If false, $translatedText is stripped original text (with possible custom tags), since there was no
+     *              entry in dictionary
+     * @return string
+     */
+    private function restore(string $originalText, string $translatedText, bool $useDictRestore) : string {
         // find sections in original text to keep in translation
         $originalMatches = array();
-        preg_match_all($pattern, $originalText, $originalMatches);
+        preg_match_all($this->tokenSet->keepRegStr().'m', $originalText, $originalMatches);
         $count = -1;
         $ignore = function($restoreMatch) use (&$translatedText, &$originalMatches, &$count) {
             // replace translated text with sections from original text
             $count++;
             return $originalMatches[1][$count];
         };
-        return preg_replace_callback($this->tokenSet->keepDictRegStr(), $ignore, $translatedText, -1, $count);
+        $restoreRegex = $useDictRestore ? $this->tokenSet->keepDictRegStr() : $this->tokenSet->keepRegStr();
+        return preg_replace_callback($restoreRegex, $ignore, $translatedText, -1, $count);
     }
 }

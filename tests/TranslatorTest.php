@@ -53,4 +53,24 @@ class TranslatorTest extends TestCase {
     }
 
 
+    public function testMultiTag_noDict_mustHandleKeepTags() : void {
+        // dictionary always uses default tags!
+        $de = [];
+//         $pl = ['car local name' => 'samochód {n}price{/n} Sloty'];
+        $dict = DictionaryTest::mockDict(['de' => $de], $this);
+
+//         $deTranslator = new Translator(TokenSet::default(), $dict);
+        $customTranslator = new Translator(TokenSet::custom('T', 'N', '{', '}'), $dict);
+
+        // text with {t} section that must be replaced by deTranslator only and {T} section for plTranslator only
+        $text = '{T}car {N}1000{/N} dollar{/T}!';
+
+//         $this->assertEquals('Pricelist: in Germany Auto 1000 Euro, in Poland {T}car local name {N}5000{/N} in currency{/T}!',
+//                 $deTranslator->translate($text, 'de'),
+//                 'Must have translated lowercase t/n tags only');
+
+        $this->assertEquals('car 1000 dollar!',
+                $customTranslator->translate($text, 'de'),
+                'Failed to strip tags');
+    }
 }
