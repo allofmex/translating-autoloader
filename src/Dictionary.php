@@ -42,12 +42,16 @@ class Dictionary {
     public function getStringsForLocale(string $locale) : array {
         if (time() > $this->lastChecked + 1) {
             // do not check on every call, 1-2 seconds should be enough to check only once for most backend requests
+            // warning, does not consider locale!
             $this->checkUpToDate($locale);
         }
 
         if (!key_exists($locale, $this->strings)) {
             $langFile = $this->getLangFilePhp($locale);
-            $this->strings[$locale] = file_exists($langFile) ? include $langFile : array();
+            if (!file_exists($langFile)) {
+                $this->checkUpToDate($locale);
+            }
+            $this->strings[$locale] = include $langFile;
         }
         return $this->strings[$locale];
     }
