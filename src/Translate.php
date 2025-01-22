@@ -62,7 +62,7 @@ class Translate {
      * @param TokenSet $tokenSet
      * @return Translator
      */
-    public static function getTranslator(TokenSet $tokenSet = null) : Translator {
+    public static function getTranslator(?TokenSet $tokenSet = null) : Translator {
         if ($tokenSet === null) {
             if (self::$defTranslator === null) {
                 self::$defTranslator = new Translator(TokenSet::default(), self::getDict());
